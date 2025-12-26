@@ -15,12 +15,12 @@ export default function Column({ status, tasks, onEdit, onDelete }) {
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[280px] max-w-[400px] p-4 bg-gray-50 rounded-lg ${
-        isOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+      className={`flex-1 min-w-[280px] max-w-[400px] p-4 bg-slate-800 rounded-lg border border-slate-700 ${
+        isOver ? 'ring-2 ring-blue-500 bg-slate-700' : ''
       }`}
       data-column={status}
     >
-      <h2 className="text-xl font-bold mb-4 text-gray-800">
+      <h2 className="text-xl font-bold mb-4 text-white">
         {statusTitles[status]} ({tasks.length})
       </h2>
       

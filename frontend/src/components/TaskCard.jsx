@@ -15,7 +15,7 @@ export default function TaskCard({ task, onEdit, onDelete, isDragging }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white p-4 rounded-md shadow-sm hover:shadow-md transition-shadow border border-gray-200"
+      className="bg-slate-700 p-4 rounded-md shadow-lg hover:shadow-xl transition-shadow border border-slate-600"
       data-task-id={task.id}
     >
       <div 
@@ -24,7 +24,7 @@ export default function TaskCard({ task, onEdit, onDelete, isDragging }) {
         className="cursor-grab active:cursor-grabbing pb-3 select-none"
       >
         <h3
-          className="text-lg font-semibold truncate mb-2"
+          className="text-lg font-semibold truncate mb-2 text-white"
           title={task.title}
         >
           {task.title}
@@ -32,7 +32,7 @@ export default function TaskCard({ task, onEdit, onDelete, isDragging }) {
 
         {task.description && (
           <p
-            className="text-sm text-gray-600 line-clamp-3"
+            className="text-sm text-gray-300 line-clamp-3"
             title={task.description}
           >
             {truncate(task.description, 150)}
@@ -46,7 +46,7 @@ export default function TaskCard({ task, onEdit, onDelete, isDragging }) {
             e.stopPropagation()
             onEdit(task.id)
           }}
-          className="py-2 px-4 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="py-2 px-4 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         >
           Edit
         </button>
@@ -57,7 +57,7 @@ export default function TaskCard({ task, onEdit, onDelete, isDragging }) {
               onDelete(task.id)
             }
           }}
-          className="py-2 px-4 text-sm bg-red-500 text-white rounded hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:outline-none"
+          className="py-2 px-4 text-sm bg-red-600 text-white rounded hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none"
         >
           Delete
         </button>

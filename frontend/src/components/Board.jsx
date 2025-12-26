@@ -95,7 +95,7 @@ export default function Board() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-xl text-gray-600">Loading tasks...</p>
+        <p className="text-xl text-gray-200">Loading tasks...</p>
       </div>
     )
   }
@@ -103,18 +103,18 @@ export default function Board() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-xl text-red-600">Error: {error}</p>
+        <p className="text-xl text-red-400">Error: {error}</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
       <OfflineIndicator isOffline={isOffline} />
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Task Board</h1>
+          <h1 className="text-3xl font-bold text-white drop-shadow-lg">🎄 Task Board 🎄</h1>
           
           <button
             onClick={handleAddTask}
