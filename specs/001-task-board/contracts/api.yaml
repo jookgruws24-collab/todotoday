@@ -1,0 +1,399 @@
+openapi: 3.0.3
+info:
+  title: Task Board API
+  description: |
+    REST API for Task Board Application task management operations.
+    All endpoints require authentication via Supabase Auth.
+    Data is automatically scoped to the authenticated user via Row Level Security.
+  version: 1.0.0
+  contact:
+    name: Task Board Development Team
+
+servers:
+  - url: https://{project-ref}.supabase.co/rest/v1
+    description: Supabase REST API endpoint
+    variables:
+      project-ref:
+        default: your-project-ref
+        description: Supabase project reference ID
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token from authentication
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - status
+        - position
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique task identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user who owns this task
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Task title (required, non-empty)
+          example: "Implement user authentication"
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Optional detailed task description
+          example: "Set up Supabase Auth with email/password login"
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+          description: Current workflow status
+          example: "todo"
+        position:
+          type: integer
+          minimum: 0
+          description: Display order within status column (0-indexed)
+          example: 0
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation timestamp (ISO 8601)
+          example: "2025-12-26T03:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last modification timestamp (ISO 8601)
+          example: "2025-12-26T04:30:00.000Z"
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Task title (required)
+          example: "Design homepage mockup"
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Optional task description
+          example: "Create Figma mockup for landing page with hero section"
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+          default: todo
+          description: Initial status (defaults to 'todo')
+          example: "todo"
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Updated task title
+          example: "Design homepage mockup (revised)"
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Updated task description
+          example: "Updated with client feedback - add testimonials section"
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+          description: Updated workflow status
+          example: "in-progress"
+        position:
+          type: integer
+          minimum: 0
+          description: Updated position within column
+          example: 2
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Task limit of 100 per user exceeded"
+        code:
+          type: string
+          description: Error code for programmatic handling
+          example: "TASK_LIMIT_EXCEEDED"
+        details:
+          type: object
+          description: Additional error context
+          additionalProperties: true
+
+  parameters:
+    TaskId:
+      name: id
+      in: query
+      required: true
+      description: Task ID to operate on
+      schema:
+        type: string
+        format: uuid
+      example: "eq.550e8400-e29b-41d4-a716-446655440000"
+
+    StatusFilter:
+      name: status
+      in: query
+      required: false
+      description: Filter tasks by status
+      schema:
+        type: string
+        enum: [todo, in-progress, done]
+      example: "eq.todo"
+
+    OrderBy:
+      name: order
+      in: query
+      required: false
+      description: Sort order for results
+      schema:
+        type: string
+        default: "status.asc,position.asc"
+      example: "status.asc,position.asc"
+
+paths:
+  /tasks:
+    get:
+      summary: List all tasks for authenticated user
+      description: |
+        Retrieves all tasks owned by the authenticated user.
+        Results are automatically filtered by user_id via RLS.
+        Default ordering: status (asc), position (asc).
+      operationId: listTasks
+      tags:
+        - Tasks
+      parameters:
+        - $ref: '#/components/parameters/StatusFilter'
+        - $ref: '#/components/parameters/OrderBy'
+      responses:
+        '200':
+          description: Successfully retrieved tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  user_id: "123e4567-e89b-12d3-a456-426614174000"
+                  title: "Implement drag-and-drop"
+                  description: "Use @dnd-kit library for accessible drag interactions"
+                  status: "in-progress"
+                  position: 0
+                  created_at: "2025-12-26T03:00:00.000Z"
+                  updated_at: "2025-12-26T04:30:00.000Z"
+                - id: "660e8400-e29b-41d4-a716-446655440001"
+                  user_id: "123e4567-e89b-12d3-a456-426614174000"
+                  title: "Write unit tests"
+                  description: "Test task CRUD operations and drag logic"
+                  status: "todo"
+                  position: 0
+                  created_at: "2025-12-26T03:15:00.000Z"
+                  updated_at: "2025-12-26T03:15:00.000Z"
+        '401':
+          description: Unauthorized - invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "JWT token is invalid or expired"
+                code: "UNAUTHORIZED"
+
+    post:
+      summary: Create a new task
+      description: |
+        Creates a new task for the authenticated user.
+        Position is automatically assigned to end of 'todo' column.
+        Enforces 100-task limit per user.
+      operationId: createTask
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+            example:
+              title: "Setup CI/CD pipeline"
+              description: "Configure GitHub Actions for automated testing and deployment"
+              status: "todo"
+      responses:
+        '201':
+          description: Task successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: "770e8400-e29b-41d4-a716-446655440002"
+                user_id: "123e4567-e89b-12d3-a456-426614174000"
+                title: "Setup CI/CD pipeline"
+                description: "Configure GitHub Actions for automated testing and deployment"
+                status: "todo"
+                position: 1
+                created_at: "2025-12-26T05:00:00.000Z"
+                updated_at: "2025-12-26T05:00:00.000Z"
+        '400':
+          description: Bad request - validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Title is required and cannot be empty"
+                code: "VALIDATION_ERROR"
+                details:
+                  field: "title"
+        '403':
+          description: Forbidden - task limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Task limit of 100 per user exceeded"
+                code: "TASK_LIMIT_EXCEEDED"
+        '401':
+          description: Unauthorized - invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks?id=eq.{taskId}:
+    patch:
+      summary: Update an existing task
+      description: |
+        Updates one or more fields of an existing task.
+        RLS ensures users can only update their own tasks.
+        Commonly used for drag-and-drop status changes.
+      operationId: updateTask
+      tags:
+        - Tasks
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+            examples:
+              statusChange:
+                summary: Update task status (drag-and-drop)
+                value:
+                  status: "in-progress"
+                  position: 2
+              editContent:
+                summary: Edit task title and description
+                value:
+                  title: "Implement drag-and-drop (updated)"
+                  description: "Use @dnd-kit with custom touch sensors"
+      responses:
+        '200':
+          description: Task successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                user_id: "123e4567-e89b-12d3-a456-426614174000"
+                title: "Implement drag-and-drop"
+                description: "Use @dnd-kit with custom touch sensors"
+                status: "in-progress"
+                position: 2
+                created_at: "2025-12-26T03:00:00.000Z"
+                updated_at: "2025-12-26T06:00:00.000Z"
+        '400':
+          description: Bad request - validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found or not owned by user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Task not found"
+                code: "NOT_FOUND"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete a task
+      description: |
+        Permanently deletes a task.
+        RLS ensures users can only delete their own tasks.
+      operationId: deleteTask
+      tags:
+        - Tasks
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '204':
+          description: Task successfully deleted (no content)
+        '404':
+          description: Task not found or not owned by user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Task not found"
+                code: "NOT_FOUND"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Tasks
+    description: Task CRUD operations
+
+externalDocs:
+  description: Supabase REST API Documentation
+  url: https://supabase.com/docs/guides/api#rest-api-overview
